@@ -1,0 +1,17 @@
+/* Minimal globals; Mantine theme controls colors and typography */
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
