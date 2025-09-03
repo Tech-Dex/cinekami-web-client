@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Alert, Button, Center, Container, Group, Loader, NumberInput, SimpleGrid, Stack, Text, Paper } from '@mantine/core';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Center, Container, Group, Loader, SimpleGrid, Stack, Text, Paper, NavLink, Box } from '@mantine/core';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { getSnapshots } from '../api/client';
@@ -17,6 +17,26 @@ const DEFAULT_FILTERS: Filters = {
   layout: 'grid',
 };
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+// Mocked API: returns a list of years with available months (numbers)
+async function fetchAvailableMonths(): Promise<Array<{ year: number; months: number[] }>> {
+  const now = dayjs();
+  const thisYear = now.year();
+  const currentMonth = now.month() + 1; // 1..12
+  const prevYear = thisYear - 1;
+  const twoYearsAgo = thisYear - 2;
+  // sample: current year up to current month; last 2 full years
+  return [
+    { year: thisYear, months: Array.from({ length: currentMonth }, (_, i) => i + 1) },
+    { year: prevYear, months: Array.from({ length: 12 }, (_, i) => i + 1) },
+    { year: twoYearsAgo, months: Array.from({ length: 12 }, (_, i) => i + 1) },
+  ];
+}
+
 function toMovieLike(s: Snapshot): Movie {
   return {
     id: s.movie_id,
@@ -27,6 +47,8 @@ function toMovieLike(s: Snapshot): Movie {
     backdrop_path: s.backdrop_path,
     popularity: s.popularity,
     tallies: s.tallies,
+    // include voted_category so MovieCard can reflect client's vote
+    voted_category: (s as Snapshot).voted_category ?? null,
   };
 }
 
@@ -34,10 +56,25 @@ export default function SnapshotsPage() {
   const now = dayjs();
   const [year, setYear] = useState<number>(now.year());
   const [month, setMonth] = useState<number>(now.month() + 1); // dayjs month is 0-based
+  const [available, setAvailable] = useState<Array<{ year: number; months: number[] }>>([]);
 
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [fp, setFp] = useState<string | null>(null);
 
-  const queryKey = useMemo(() => ['snapshots', { year, month, ...filters }] as const, [year, month, filters]);
+  useEffect(() => {
+    // load mocked available months
+    fetchAvailableMonths().then(setAvailable).catch(() => setAvailable([]));
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    import('../utils/fingerprint').then(({ getFingerprint }) => {
+      getFingerprint().then((f) => { if (mounted) setFp(f); }).catch(() => {});
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const queryKey = useMemo(() => ['snapshots', { year, month, ...filters }, fp] as const, [year, month, filters, fp]);
 
   const {
     data,
@@ -59,7 +96,7 @@ export default function SnapshotsPage() {
         max_popularity: filters.max_popularity ?? undefined,
         cursor: pageParam as string | null,
         limit: 18, // multiple of 3 for balanced grid
-      });
+      }, fp ?? undefined);
     },
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     refetchOnWindowFocus: false,
@@ -67,10 +104,6 @@ export default function SnapshotsPage() {
   });
 
   const items = (data?.pages ?? []).flatMap((p) => p.items);
-
-  const handleGo = useCallback(() => {
-    refetch();
-  }, [refetch]);
 
   const handleFilterChange = useCallback((next: Filters) => {
     setFilters(next);
@@ -80,51 +113,67 @@ export default function SnapshotsPage() {
   const cols = filters.layout === 'grid' ? { base: 1, md: 2 } : { base: 1 };
 
   return (
-    <Container size="xl">
-      <Stack>
-        <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: 64, zIndex: 2, backdropFilter: 'blur(4px)' }}>
-          <Group>
-            <NumberInput label="Year" value={year} onChange={(v) => setYear(typeof v === 'number' ? v : year)} min={2000} max={2100} w={120} />
-            <NumberInput label="Month" value={month} onChange={(v) => setMonth(typeof v === 'number' ? Math.min(12, Math.max(1, v)) : month)} min={1} max={12} w={100} />
-            <Button variant="default" onClick={handleGo}>Go</Button>
-          </Group>
-          <MovieFilters value={filters} onChange={handleFilterChange} />
-        </Paper>
+    <Container size={1560}>
+      <Group align="start" gap="lg" wrap="wrap">
+        <Box w={220} style={{ position: 'sticky', top: 64, alignSelf: 'flex-start', zIndex: 2 }}>
+          <Paper withBorder p="sm" shadow="xs">
+            <Stack gap={4}>
+              {available.map((y) => (
+                <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year}>
+                  {y.months.map((m) => (
+                    <NavLink
+                      key={m}
+                      label={MONTH_NAMES[m - 1]}
+                      active={y.year === year && m === month}
+                      onClick={() => { setYear(y.year); setMonth(m); }}
+                    />
+                  ))}
+                </NavLink>
+              ))}
+            </Stack>
+          </Paper>
+        </Box>
 
-        {isError && (
-          <Alert color="red" title="Failed to load snapshots">{error?.message || 'Error'}</Alert>
-        )}
+        <Stack style={{ flex: 1, minWidth: 0 }}>
+          <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: 64, zIndex: 1, backdropFilter: 'blur(4px)' }}>
+            <MovieFilters value={filters} onChange={handleFilterChange} />
+          </Paper>
 
-        {!isFetching && items.length === 0 && !isError && (
-          <EmptyState title="No snapshots" message="Try another month or adjust filters." />
-        )}
-
-        <SimpleGrid cols={cols} spacing="lg">
-          {items.map((s) => (
-            <MovieCard
-              key={`${s.month}-${s.movie_id}`}
-              movie={toMovieLike(s)}
-              layout={filters.layout}
-              showActions={false}
-            />
-          ))}
-        </SimpleGrid>
-
-        <Center>
-          {(isFetching && !isFetchingNextPage) && <Loader />}
-        </Center>
-
-        <InfiniteLoader
-          onLoad={() => fetchNextPage()}
-          disabled={!hasNextPage || isFetchingNextPage}
-        />
-
-        <Center>
-          {!hasNextPage && items.length > 0 && (
-            <Text c="dimmed" size="sm">No more results</Text>
+          {isError && (
+            <Alert color="red" title="Failed to load snapshots">{error?.message || 'Error'}</Alert>
           )}
-        </Center>
-      </Stack>
+
+          {!isFetching && items.length === 0 && !isError && (
+            <EmptyState title="No snapshots" message="Try another month or adjust filters." />
+          )}
+
+          <SimpleGrid cols={cols} spacing="lg">
+            {items.map((s) => (
+              <MovieCard
+                key={`${s.month}-${s.movie_id}`}
+                movie={toMovieLike(s)}
+                layout={filters.layout}
+                showActions={false}
+              />
+            ))}
+          </SimpleGrid>
+
+          <Center>
+            {(isFetching && !isFetchingNextPage) && <Loader />}
+          </Center>
+
+          <InfiniteLoader
+            onLoad={() => fetchNextPage()}
+            disabled={!hasNextPage || isFetchingNextPage}
+          />
+
+          <Center>
+            {!hasNextPage && items.length > 0 && (
+              <Text c="dimmed" size="sm">No more results</Text>
+            )}
+          </Center>
+        </Stack>
+      </Group>
     </Container>
   );
 }

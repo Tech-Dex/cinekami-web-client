@@ -29,6 +29,8 @@ export type Movie = {
   backdrop_path: string | null;
   popularity: number;
   tallies?: Tallies;
+  // Optional: category the current client/fingerprint has voted for
+  voted_category?: 'solo_friends' | 'couple' | 'streaming' | 'arr' | null;
 };
 
 export type Snapshot = {
@@ -42,6 +44,8 @@ export type Snapshot = {
   poster_path: string | null;
   backdrop_path: string | null;
   popularity: number;
+  // Optional: voted category for this snapshot for the current fingerprint
+  voted_category?: 'solo_friends' | 'couple' | 'streaming' | 'arr' | null;
 };
 
 export type Tally = {
@@ -60,3 +64,10 @@ export type ActiveMoviesParams = {
 };
 
 export type SnapshotParams = Omit<ActiveMoviesParams, 'cursor'> & { cursor?: string | null };
+
+export type VoteResponse = {
+  inserted: boolean;
+  message: string;
+  tallies?: Tallies;
+  voted_category?: 'solo_friends' | 'couple' | 'streaming' | 'arr' | null;
+};

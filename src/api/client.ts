@@ -7,6 +7,7 @@ import type {
   Snapshot,
   SnapshotParams,
   Tally,
+  VoteResponse,
 } from './types';
 
 function buildQuery(params: Record<string, unknown> | undefined) {
@@ -41,26 +42,33 @@ export async function getHealth(): Promise<HealthResponse> {
   return handleResponse<HealthResponse>(res);
 }
 
-export async function getActiveMovies(params: ActiveMoviesParams): Promise<PaginatedResponse<Movie>> {
-  const res = await fetch(`${base}/movies/active${buildQuery(params)}`);
+export async function getActiveMovies(params: ActiveMoviesParams, fingerprint?: string, signal?: AbortSignal): Promise<PaginatedResponse<Movie>> {
+  const headers: Record<string, string> = {};
+  if (fingerprint) headers['X-Fingerprint'] = fingerprint;
+  const res = await fetch(`${base}/movies/active${buildQuery(params)}`, { headers, signal });
   return handleResponse<PaginatedResponse<Movie>>(res);
 }
 
-export async function getSnapshots(year: number, month: number, params: SnapshotParams): Promise<PaginatedResponse<Snapshot>> {
-  const res = await fetch(`${base}/snapshots/${year}/${month}${buildQuery(params)}`);
+export async function getSnapshots(year: number, month: number, params: SnapshotParams, fingerprint?: string, signal?: AbortSignal): Promise<PaginatedResponse<Snapshot>> {
+  const headers: Record<string, string> = {};
+  if (fingerprint) headers['X-Fingerprint'] = fingerprint;
+  const res = await fetch(`${base}/snapshots/${year}/${month}${buildQuery(params)}`, { headers, signal });
   return handleResponse<PaginatedResponse<Snapshot>>(res);
 }
 
-export async function getTallies(movieId: number, cursor?: string | null, limit?: number): Promise<PaginatedResponse<Tally>> {
-  const res = await fetch(`${base}/movies/${movieId}/tallies${buildQuery({ cursor, limit })}`);
+export async function getTallies(movieId: number, cursor?: string | null, limit?: number, signal?: AbortSignal): Promise<PaginatedResponse<Tally>> {
+  const res = await fetch(`${base}/movies/${movieId}/tallies${buildQuery({ cursor, limit })}`, { signal });
   return handleResponse<PaginatedResponse<Tally>>(res);
 }
 
-export async function postVote(movieId: number, body: { category: string; fingerprint: string }): Promise<{ inserted: boolean; message: string }> {
+export async function postVote(movieId: number, body: { category: string }, fingerprint?: string): Promise<VoteResponse> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (fingerprint) headers['X-Fingerprint'] = fingerprint;
+
   const res = await fetch(`${base}/movies/${movieId}/votes`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
-  return handleResponse<{ inserted: boolean; message: string }>(res);
+  return handleResponse<VoteResponse>(res);
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Center, Container, Loader, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
@@ -22,7 +22,15 @@ export default function ActiveMoviesPage() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const queryClient = useQueryClient();
 
-  const queryKey = useMemo(() => ['movies', 'active', filters] as const, [filters]);
+  // Load and store client fingerprint
+  const [fp, setFp] = useState<string | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    getFingerprint().then((f) => { if (mounted) setFp(f); }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  const queryKey = useMemo(() => ['movies', 'active', filters, fp] as const, [filters, fp]);
 
   const {
     data,
@@ -44,37 +52,46 @@ export default function ActiveMoviesPage() {
         max_popularity: filters.max_popularity ?? undefined,
         cursor: pageParam as string | null,
         limit: 18, // multiple of 3 for balanced grid
-      });
+      }, fp ?? undefined);
       return res;
     },
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
+    enabled: !!fp,
   });
 
   const items = (data?.pages ?? []).flatMap((p) => p.items);
 
   const handleFilterChange = useCallback((next: Filters) => {
     setFilters(next);
-    queryClient.invalidateQueries({ queryKey: ['movies', 'active'] });
-  }, [queryClient]);
+    refetch();
+  }, [refetch]);
+
+  // Track which movie is currently posting a vote
+  const [votingId, setVotingId] = useState<number | null>(null);
 
   const handleVote = useCallback(async (movieId: number, category: 'solo_friends' | 'couple' | 'streaming' | 'arr') => {
     try {
-      const fp = await getFingerprint();
-      const res = await postVote(movieId, { category, fingerprint: fp });
+      setVotingId(movieId);
+      const fingerprint = fp ?? await getFingerprint();
+      const res = await postVote(movieId, { category }, fingerprint ?? undefined);
       notifications.show({
         title: res.inserted ? 'Vote recorded' : 'Duplicate vote',
         message: res.message,
       });
+      // Refetch active movies so voted_category and tallies update
       queryClient.invalidateQueries({ queryKey: ['movies', 'active'] });
+      refetch();
     } catch (e: unknown) {
       const err = e as HttpError;
       const status = err?.status;
       const message = err?.message || 'Unexpected error';
       notifications.show({ color: 'red', title: `Error${status ? ` ${status}` : ''}`, message });
+    } finally {
+      setVotingId(null);
     }
-  }, [queryClient]);
+  }, [fp, queryClient, refetch]);
 
   const cols = filters.layout === 'grid' ? { base: 1, md: 2 } : { base: 1 };
 
@@ -100,6 +117,7 @@ export default function ActiveMoviesPage() {
               movie={m}
               layout={filters.layout}
               onVote={(cat) => handleVote(m.id, cat)}
+              isVoting={votingId === m.id}
             />
           ))}
         </SimpleGrid>
