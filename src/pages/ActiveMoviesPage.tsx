@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Center, Container, Loader, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { getActiveMovies, postVote } from '../api/client';
 import type { Movie, PaginatedResponse, HttpError } from '../api/types';
@@ -45,7 +45,7 @@ export default function ActiveMoviesPage() {
     queryKey,
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
-      const res = await getActiveMovies({
+      return getActiveMovies({
         sort_by: filters.sort_by,
         sort_dir: filters.sort_dir,
         min_popularity: filters.min_popularity ?? undefined,
@@ -53,7 +53,6 @@ export default function ActiveMoviesPage() {
         cursor: pageParam as string | null,
         limit: 18, // multiple of 3 for balanced grid
       }, fp ?? undefined);
-      return res;
     },
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     refetchOnWindowFocus: false,
@@ -74,15 +73,33 @@ export default function ActiveMoviesPage() {
   const handleVote = useCallback(async (movieId: number, category: 'solo_friends' | 'couple' | 'streaming' | 'arr') => {
     try {
       setVotingId(movieId);
-      const fingerprint = fp ?? await getFingerprint();
-      const res = await postVote(movieId, { category }, fingerprint ?? undefined);
+      const f = fp ?? await getFingerprint();
+      const res = await postVote(movieId, { category }, f ?? undefined);
+
+      // Optimistically update cached pages so UI reflects the vote immediately
+      queryClient.setQueriesData({ queryKey: ['movies', 'active'] }, (oldData: InfiniteData<PaginatedResponse<Movie>> | undefined) => {
+        if (!oldData) return oldData;
+        const pages = oldData.pages?.map((page) => ({
+          ...page,
+          items: page.items.map((m) => (
+            m.id === movieId
+              ? {
+                  ...m,
+                  tallies: res.tallies ?? m.tallies,
+                  voted_category: (res.voted_category ?? m.voted_category ?? null) as Movie['voted_category'],
+                }
+              : m
+          )),
+        }));
+        return { ...oldData, pages } as InfiniteData<PaginatedResponse<Movie>>;
+      });
+
       notifications.show({
         title: res.inserted ? 'Vote recorded' : 'Duplicate vote',
         message: res.message,
       });
-      // Refetch active movies so voted_category and tallies update
-      queryClient.invalidateQueries({ queryKey: ['movies', 'active'] });
-      refetch();
+      // Mark data stale but don't refetch active queries immediately to avoid overwriting optimistic update
+      queryClient.invalidateQueries({ queryKey: ['movies', 'active'], refetchType: 'inactive' });
     } catch (e: unknown) {
       const err = e as HttpError;
       const status = err?.status;
@@ -91,7 +108,7 @@ export default function ActiveMoviesPage() {
     } finally {
       setVotingId(null);
     }
-  }, [fp, queryClient, refetch]);
+  }, [fp, queryClient]);
 
   const cols = filters.layout === 'grid' ? { base: 1, md: 2 } : { base: 1 };
 

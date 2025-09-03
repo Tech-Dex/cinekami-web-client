@@ -1,4 +1,4 @@
-import { AppShell, Group, Title, Button, Container } from '@mantine/core';
+import { AppShell, Group, Button, Container, Title } from '@mantine/core';
 import { Link, Outlet, NavLink as RRNavLink, useLocation } from 'react-router-dom';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle';
 
@@ -8,16 +8,25 @@ export default function RootLayout() {
   const links = [
     { to: '/', label: 'Upcoming', match: (p: string) => p === '/' },
     { to: '/snapshots', label: 'Snapshots', match: (p: string) => p.startsWith('/snapshots') },
-    { to: '/about', label: 'About', match: (p: string) => p.startsWith('/about') },
   ];
 
   return (
     <AppShell header={{ height: 56 }} padding="md">
       <AppShell.Header>
         <Container size="xl" h="100%">
-          <Group h="100%" justify="space-between">
-            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <Title order={3}>Cinekami</Title>
+          <Group h="100%" justify="space-between" wrap="nowrap">
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }} aria-label="Cinekami home">
+              <Title
+                order={3}
+                style={{
+                  color: 'var(--mantine-color-orange-filled)',
+                  display: 'inline-block',
+                  transform: 'scaleX(1.3)',
+                  transformOrigin: 'left center',
+                }}
+              >
+                CINEKAMI
+              </Title>
             </Link>
             <Group gap="xs">
               {links.map((l) => (
@@ -26,7 +35,7 @@ export default function RootLayout() {
                   component={RRNavLink}
                   to={l.to}
                   variant={l.match(location.pathname) ? 'filled' : 'subtle'}
-                  color={l.match(location.pathname) ? undefined : 'gray'}
+                  color={l.match(location.pathname) ? 'orange' : 'gray'}
                 >
                   {l.label}
                 </Button>

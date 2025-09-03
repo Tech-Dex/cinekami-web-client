@@ -86,7 +86,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
             <Box style={{ width: '100%', alignSelf: 'stretch', justifySelf: 'stretch', gridColumn: '1 / -1' }}>
               <Box my={6} h={1} w="100%" bg="var(--mantine-color-default-border)" />
               {layout === 'grid' && isXL ? (
-                <Group gap={6} wrap="wrap" justify="space-between" style={{ width: '100%', justifySelf: 'stretch' }}>
+                <Group gap={4} wrap="nowrap" justify="flex-start" style={{ width: '100%', justifySelf: 'stretch', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                   {ORDERED_CATEGORIES.map((c) => {
                     const isVoted = votedCategory === c.key;
                     const disabled = (votedCategory !== null && !isVoted) || isVoting;
@@ -100,6 +100,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                           color={isVoted ? 'orange' : undefined}
                           disabled={disabled}
                           loading={isVoting && isVoted}
+                          style={{ whiteSpace: 'nowrap', paddingInline: 8 }}
                         >
                           {c.label}
                         </Button>
@@ -108,7 +109,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                   })}
                 </Group>
               ) : (
-                <Group gap={6} wrap="wrap" justify="flex-start" style={{ width: '100%', justifySelf: 'stretch' }}>
+                <Group gap={4} wrap="nowrap" justify="flex-start" style={{ width: '100%', justifySelf: 'stretch', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                   {ORDERED_CATEGORIES.map((c) => {
                     const isVoted = votedCategory === c.key;
                     const disabled = (votedCategory !== null && !isVoted) || isVoting;
