@@ -93,7 +93,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     return (
                       <Tooltip label={c.label} key={c.key}>
                         <Button
-                          size="xs"
+                          size="compact-xs"
                           variant="filled"
                           leftSection={c.icon}
                           onClick={() => onVote?.(c.key)}
@@ -116,13 +116,14 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     return (
                       <Tooltip label={c.label} key={c.key}>
                         <Button
-                          size="xs"
+                          size="compact-xs"
                           variant="filled"
                           leftSection={c.icon}
                           onClick={() => onVote?.(c.key)}
                           color={isVoted ? 'orange' : undefined}
                           disabled={disabled}
                           loading={isVoting && isVoted}
+                          style={{ whiteSpace: 'nowrap', paddingInline: 8 }}
                         >
                           {c.label}
                         </Button>
@@ -137,9 +138,9 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
           <Box style={{ width: '100%', alignSelf: 'stretch', justifySelf: 'stretch', gridColumn: '1 / -1' }}>
             <Box my={6} h={1} w="100%" bg="var(--mantine-color-default-border)" />
             <Group justify="space-between" wrap="wrap" gap="xs" style={{ width: '100%', justifySelf: 'stretch' }}>
-              <Group gap={6} wrap="wrap">
+              <Group gap={8} wrap="wrap">
                 {ORDERED_CATEGORIES.map((c) => (
-                  <Badge key={c.key} variant="light" radius="sm" color="gray" size="xs">
+                  <Badge key={c.key} variant="light" radius="md" color="gray" size="sm" style={{ fontWeight: 600 }}>
                     {c.label}{hottest.includes(c.key) ? ' 🔥' : ''}: {tallies[c.key as keyof typeof tallies] ?? 0}
                   </Badge>
                 ))}

@@ -119,12 +119,13 @@ export default function SnapshotsPage() {
           <Paper withBorder p="sm" shadow="xs">
             <Stack gap={4}>
               {available.map((y) => (
-                <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year}>
+                <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="var(--mantine-color-orange-filled)">
                   {y.months.map((m) => (
                     <NavLink
                       key={m}
                       label={MONTH_NAMES[m - 1]}
                       active={y.year === year && m === month}
+                      color="var(--mantine-color-orange-filled)"
                       onClick={() => { setYear(y.year); setMonth(m); }}
                     />
                   ))}

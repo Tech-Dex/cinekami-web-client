@@ -1,9 +1,14 @@
 import { AppShell, Group, Button, Container, Title } from '@mantine/core';
+import { useEffect } from 'react';
 import { Link, Outlet, NavLink as RRNavLink, useLocation } from 'react-router-dom';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle';
 
 export default function RootLayout() {
   const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
 
   const links = [
     { to: '/', label: 'Upcoming', match: (p: string) => p === '/' },
@@ -35,7 +40,7 @@ export default function RootLayout() {
                   component={RRNavLink}
                   to={l.to}
                   variant={l.match(location.pathname) ? 'filled' : 'subtle'}
-                  color={l.match(location.pathname) ? 'orange' : 'gray'}
+                  color={l.match(location.pathname) ? 'var(--mantine-color-orange-filled)' : 'gray'}
                 >
                   {l.label}
                 </Button>
