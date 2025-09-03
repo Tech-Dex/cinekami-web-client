@@ -20,6 +20,6 @@ export default defineConfig({
       },
     },
     // You can raise this if needed to silence warnings after better chunking
-    // chunkSizeWarningLimit: 900,
+    chunkSizeWarningLimit: 600,
   },
 })

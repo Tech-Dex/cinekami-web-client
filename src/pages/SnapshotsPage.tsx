@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Alert, Center, Container, Loader, SimpleGrid, Stack, Text, Paper, NavLink, useMantineTheme, Modal, Button, Group } from '@mantine/core';
 import { useMediaQuery, useWindowScroll } from '@mantine/hooks';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -127,14 +127,13 @@ export default function SnapshotsPage() {
   const theme = useMantineTheme();
   const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
   const headerHeight = isSm ? 72 : 56; // match RootLayout AppShell header heights
+  const stickyTop = headerHeight + 8;
+  const leftStickyTop = stickyTop; // keep same spacing from header as the filter bar
   const [scroll] = useWindowScroll();
   // left column fixed width
   const LEFT_COL_WIDTH = 280;
-  // placeholder ref and measured values for fixed menu on desktop
-  const leftPlaceholderRef = useRef<HTMLDivElement | null>(null);
-  const [fixedLeft, setFixedLeft] = useState<number | null>(null);
-  const [fixedWidth, setFixedWidth] = useState<number | null>(null);
-  const [fixedReady, setFixedReady] = useState(false);
+  // max height for the inner left menu content while wrapper is sticky
+  const leftMaxHeight = `calc(100vh - ${leftStickyTop + 10}px)`;
 
   // Hide/show filters when scrolling: hide on scroll down, reveal on small upward scroll
   // Debounced to avoid flicker on small/jittery scrolls
@@ -195,29 +194,6 @@ export default function SnapshotsPage() {
     };
   }, [isJumpOpen, available]);
 
-  // On desktop, render the left menu as fixed so it remains visible even at bottom.
-  // Measure the placeholder's left/width before paint using useLayoutEffect to avoid flicker.
-  useLayoutEffect(() => {
-    if (isSm) return; // only for desktop
-    const el = leftPlaceholderRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    // add horizontal inset to match Stack/paper padding and avoid overflow
-    const H_INSET = 8; // match vertical spacing used elsewhere
-    setFixedLeft(rect.left + window.scrollX + H_INSET);
-    setFixedWidth(Math.max(0, rect.width - H_INSET * 2));
-    // mark ready so we apply fixed positioning
-    setFixedReady(true);
-    const onResize = () => {
-      const r = el.getBoundingClientRect();
-      setFixedLeft(r.left + window.scrollX + H_INSET);
-      setFixedWidth(Math.max(0, r.width - H_INSET * 2));
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [isSm, available]);
-
-  // Pure CSS sticky for left panel: no JS pinning to avoid flicker.
   return (
     <Container size={1560}>
       <Stack style={{ flex: 1, minWidth: 0 }}>
@@ -351,39 +327,32 @@ export default function SnapshotsPage() {
           // desktop: two-column layout with left fixed year/month and right column containing filters + results
           <div style={{ display: 'grid', gridTemplateColumns: `${LEFT_COL_WIDTH}px 1fr`, columnGap: 'var(--mantine-spacing-md)', alignItems: 'start' }}>
             {/* placeholder to reserve space and provide measurement point for the fixed menu */}
-            <div ref={leftPlaceholderRef} style={{ alignSelf: 'start', width: `${LEFT_COL_WIDTH}px`, height: 'auto', marginTop: 8 }}>
-              {/* render the menu as a fixed element when measurements are ready; otherwise render it normally (sticky) */}
-              {fixedReady && fixedLeft !== null && fixedWidth !== null ? (
-                <div style={{ position: 'fixed', top: headerHeight + 8, left: fixedLeft, width: fixedWidth, zIndex: 1001, maxHeight: 'calc(100vh - 96px)', overflowY: 'auto', boxSizing: 'border-box' }}>
-                  <Paper withBorder p="sm" shadow="xs" style={{ width: '100%' }}>
-                    <Stack gap={4}>
-                      {available.map((y) => (
-                        <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="orange">
-                          {y.months.map((m) => (
-                            <NavLink key={m} label={MONTH_NAMES[m - 1]} active={y.year === year && m === month} color="orange" onClick={() => { setYear(y.year); setMonth(m); }} />
-                          ))}
-                        </NavLink>
+            <div style={{ alignSelf: 'start', width: `${LEFT_COL_WIDTH}px`, position: 'sticky', top: leftStickyTop, zIndex: 20 }}>
+              <Paper
+                withBorder
+                p="sm"
+                shadow="xs"
+                style={{
+                  maxHeight: leftMaxHeight,
+                  overflowY: 'auto',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <Stack gap={4}>
+                  {available.map((y) => (
+                    <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="orange">
+                      {y.months.map((m) => (
+                        <NavLink key={m} label={MONTH_NAMES[m - 1]} active={y.year === year && m === month} color="orange" onClick={() => { setYear(y.year); setMonth(m); }} />
                       ))}
-                    </Stack>
-                  </Paper>
-                </div>
-              ) : (
-                <Paper withBorder p="sm" shadow="xs" style={{ /* changed: add small gap from header to match filter spacing */ position: 'sticky', top: headerHeight + 8, alignSelf: 'start', zIndex: 10, maxHeight: 'calc(100vh - 96px)', overflowY: 'auto', width: '100%', boxSizing: 'border-box' }}>
-                  <Stack gap={4}>
-                    {available.map((y) => (
-                      <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="orange">
-                        {y.months.map((m) => (
-                          <NavLink key={m} label={MONTH_NAMES[m - 1]} active={y.year === year && m === month} color="orange" onClick={() => { setYear(y.year); setMonth(m); }} />
-                        ))}
-                      </NavLink>
-                    ))}
-                  </Stack>
-                </Paper>
-              )}
+                    </NavLink>
+                  ))}
+                </Stack>
+              </Paper>
             </div>
 
-            <div>
-              <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: headerHeight + 8, zIndex: 1500, backdropFilter: 'blur(4px)', willChange: 'transform', transition: 'transform 190ms ease', transform: showFilters ? 'translateY(0)' : 'translateY(-120%)' }}>
+            <Stack>
+              <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: stickyTop, zIndex: 1500, backdropFilter: 'blur(4px)', willChange: 'transform', transition: 'transform 190ms ease', transform: showFilters ? 'translateY(0)' : 'translateY(-120%)' }}>
                 <MovieFilters value={filters} onChange={handleFilterChange} />
               </Paper>
 
@@ -427,7 +396,7 @@ export default function SnapshotsPage() {
                   <Text c="dimmed" size="sm">No more results</Text>
                 )}
               </Center>
-            </div>
+            </Stack>
           </div>
         )}
       </Stack>
