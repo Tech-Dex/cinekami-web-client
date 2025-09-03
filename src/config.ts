@@ -4,9 +4,14 @@ export const TMDB_IMAGE_BASE_URL = (import.meta.env.VITE_TMDB_IMAGE_BASE_URL as 
 
 // Build a TMDB poster URL for a given size (e.g. w154, w185, w342, w500, w780)
 export function buildTmdbPosterUrl(path: string, size: string): string {
-  // Ensure leading slash
   const p = path.startsWith('/') ? path : `/${path}`;
-  // Always use official TMDB base root for configurable sizes
+  const root = 'https://image.tmdb.org/t/p';
+  return `${root}/${size}${p}`;
+}
+
+// Build a TMDB backdrop URL for a given size (e.g. w300, w780, w1280)
+export function buildTmdbBackdropUrl(path: string, size: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
   const root = 'https://image.tmdb.org/t/p';
   return `${root}/${size}${p}`;
 }

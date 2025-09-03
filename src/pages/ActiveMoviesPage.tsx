@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Center, Container, Loader, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
+import { Alert, Button, Center, Container, Loader, Paper, SimpleGrid, Stack, Text, useMantineTheme } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { getActiveMovies, postVote } from '../api/client';
@@ -68,6 +69,9 @@ export default function ActiveMoviesPage() {
     refetch();
   }, [refetch]);
 
+  const theme = useMantineTheme();
+  const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+
   // Track which movie is currently posting a vote
   const [votingId, setVotingId] = useState<number | null>(null);
 
@@ -116,7 +120,7 @@ export default function ActiveMoviesPage() {
   return (
     <Container size="xl">
       <Stack>
-        <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: 64, zIndex: 2, backdropFilter: 'blur(4px)' }}>
+        <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: isSm ? 80 : 64, zIndex: 2, backdropFilter: 'blur(4px)' }}>
           <MovieFilters value={filters} onChange={handleFilterChange} />
         </Paper>
 

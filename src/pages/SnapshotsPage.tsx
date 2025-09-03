@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Center, Container, Group, Loader, SimpleGrid, Stack, Text, Paper, NavLink, Box } from '@mantine/core';
+import { Alert, Center, Container, Loader, SimpleGrid, Stack, Text, Paper, NavLink, useMantineTheme } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { getSnapshots, getAvailableSnapshots } from '../api/client';
@@ -116,77 +117,76 @@ export default function SnapshotsPage() {
   }, [refetch]);
 
   const cols = filters.layout === 'grid' ? { base: 1, md: 2 } : { base: 1 };
+  const theme = useMantineTheme();
+  const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
   return (
     <Container size={1560}>
-      <Group align="start" gap="lg" wrap="wrap">
-        <Box w={220} style={{ position: 'sticky', top: 64, alignSelf: 'flex-start', zIndex: 2 }}>
-          <Paper withBorder p="sm" shadow="xs">
-            <Stack gap={4}>
-              {available.map((y) => (
-                <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="orange">
-                  {y.months.map((m) => (
-                    <NavLink
-                      key={m}
-                      label={MONTH_NAMES[m - 1]}
-                      active={y.year === year && m === month}
-                      color="orange"
-                      onClick={() => { setYear(y.year); setMonth(m); }}
-                    />
-                  ))}
-                </NavLink>
-              ))}
-            </Stack>
-          </Paper>
-        </Box>
+      <Stack style={{ flex: 1, minWidth: 0 }}>
+        <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: isSm ? 80 : 64, zIndex: 1, backdropFilter: 'blur(4px)' }}>
+          <MovieFilters value={filters} onChange={handleFilterChange} />
+        </Paper>
 
-        <Stack style={{ flex: 1, minWidth: 0 }}>
-          <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: 64, zIndex: 1, backdropFilter: 'blur(4px)' }}>
-            <MovieFilters value={filters} onChange={handleFilterChange} />
-          </Paper>
+        {/* Year/Month selector below filters (not sticky) */}
+        <Paper withBorder p="sm" shadow="xs">
+          <Stack gap={4}>
+            {available.map((y) => (
+              <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="orange">
+                {y.months.map((m) => (
+                  <NavLink
+                    key={m}
+                    label={MONTH_NAMES[m - 1]}
+                    active={y.year === year && m === month}
+                    color="orange"
+                    onClick={() => { setYear(y.year); setMonth(m); }}
+                  />
+                ))}
+              </NavLink>
+            ))}
+          </Stack>
+        </Paper>
 
-          {isError && (
-            <Alert color="red" title="Failed to load snapshots">{error?.message || 'Error'}</Alert>
+        {isError && (
+          <Alert color="red" title="Failed to load snapshots">{error?.message || 'Error'}</Alert>
+        )}
+
+        {!isFetching && items.length === 0 && !isError && (
+          <EmptyState title="No snapshots" message="Try another month or adjust filters." />
+        )}
+
+        <SimpleGrid cols={cols} spacing="lg">
+          {(isFetching && items.length === 0) ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <MovieCardSkeleton key={`s-${i}`} layout={filters.layout} />
+            ))
+          ) : (
+            items.map((s, idx) => (
+              <MovieCard
+                key={`${s.month}-${s.movie_id}`}
+                movie={toMovieLike(s)}
+                layout={filters.layout}
+                showActions={false}
+                priority={idx < 4}
+              />
+            ))
           )}
+        </SimpleGrid>
 
-          {!isFetching && items.length === 0 && !isError && (
-            <EmptyState title="No snapshots" message="Try another month or adjust filters." />
+        <Center>
+          {(isFetching && !isFetchingNextPage) && <Loader />}
+        </Center>
+
+        <InfiniteLoader
+          onLoad={() => fetchNextPage()}
+          disabled={!hasNextPage || isFetchingNextPage}
+        />
+
+        <Center>
+          {!hasNextPage && items.length > 0 && (
+            <Text c="dimmed" size="sm">No more results</Text>
           )}
-
-          <SimpleGrid cols={cols} spacing="lg">
-            {(isFetching && items.length === 0) ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <MovieCardSkeleton key={`s-${i}`} layout={filters.layout} />
-              ))
-            ) : (
-              items.map((s, idx) => (
-                <MovieCard
-                  key={`${s.month}-${s.movie_id}`}
-                  movie={toMovieLike(s)}
-                  layout={filters.layout}
-                  showActions={false}
-                  priority={idx < 4}
-                />
-              ))
-            )}
-          </SimpleGrid>
-
-          <Center>
-            {(isFetching && !isFetchingNextPage) && <Loader />}
-          </Center>
-
-          <InfiniteLoader
-            onLoad={() => fetchNextPage()}
-            disabled={!hasNextPage || isFetchingNextPage}
-          />
-
-          <Center>
-            {!hasNextPage && items.length > 0 && (
-              <Text c="dimmed" size="sm">No more results</Text>
-            )}
-          </Center>
-        </Stack>
-      </Group>
+        </Center>
+      </Stack>
     </Container>
   );
 }
