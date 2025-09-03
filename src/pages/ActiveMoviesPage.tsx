@@ -6,7 +6,7 @@ import { getActiveMovies, postVote } from '../api/client';
 import type { Movie, PaginatedResponse, HttpError } from '../api/types';
 import { MovieCard } from '../components/MovieCard';
 import { MovieFilters, type Filters } from '../components/MovieFilters';
-import { getFingerprint } from '../utils/fingerprint';
+import { getFingerprintV2 } from '../utils/fingerprintV2';
 import { EmptyState } from '../components/EmptyState';
 import { InfiniteLoader } from '../components/InfiniteLoader';
 
@@ -26,7 +26,7 @@ export default function ActiveMoviesPage() {
   const [fp, setFp] = useState<string | null>(null);
   useEffect(() => {
     let mounted = true;
-    getFingerprint().then((f) => { if (mounted) setFp(f); }).catch(() => {});
+    getFingerprintV2().then((f) => { if (mounted) setFp(f); }).catch(() => {});
     return () => { mounted = false; };
   }, []);
 
@@ -73,7 +73,7 @@ export default function ActiveMoviesPage() {
   const handleVote = useCallback(async (movieId: number, category: 'solo_friends' | 'couple' | 'streaming' | 'arr') => {
     try {
       setVotingId(movieId);
-      const f = fp ?? await getFingerprint();
+      const f = fp ?? await getFingerprintV2();
       const res = await postVote(movieId, { category }, f ?? undefined);
 
       // Optimistically update cached pages so UI reflects the vote immediately

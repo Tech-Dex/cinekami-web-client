@@ -8,6 +8,7 @@ import { MovieCard } from '../components/MovieCard';
 import { MovieFilters, type Filters } from '../components/MovieFilters';
 import { EmptyState } from '../components/EmptyState';
 import { InfiniteLoader } from '../components/InfiniteLoader';
+import { getFingerprintV2 } from '../utils/fingerprintV2';
 
 const DEFAULT_FILTERS: Filters = {
   sort_by: 'popularity',
@@ -68,9 +69,7 @@ export default function SnapshotsPage() {
 
   useEffect(() => {
     let mounted = true;
-    import('../utils/fingerprint').then(({ getFingerprint }) => {
-      getFingerprint().then((f) => { if (mounted) setFp(f); }).catch(() => {});
-    });
+    getFingerprintV2().then((f) => { if (mounted) setFp(f); }).catch(() => {});
     return () => { mounted = false; };
   }, []);
 
@@ -119,13 +118,13 @@ export default function SnapshotsPage() {
           <Paper withBorder p="sm" shadow="xs">
             <Stack gap={4}>
               {available.map((y) => (
-                <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="var(--mantine-color-orange-filled)">
+                <NavLink key={y.year} label={String(y.year)} defaultOpened={y.year === year} color="orange">
                   {y.months.map((m) => (
                     <NavLink
                       key={m}
                       label={MONTH_NAMES[m - 1]}
                       active={y.year === year && m === month}
-                      color="var(--mantine-color-orange-filled)"
+                      color="orange"
                       onClick={() => { setYear(y.year); setMonth(m); }}
                     />
                   ))}

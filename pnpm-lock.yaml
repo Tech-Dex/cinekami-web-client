@@ -32,6 +32,9 @@ importers:
       '@tanstack/react-query-devtools':
         specifier: ^5.85.8
         version: 5.85.8(@tanstack/react-query@5.85.9(react@19.1.1))(react@19.1.1)
+      '@thumbmarkjs/thumbmarkjs':
+        specifier: ^1.2.0
+        version: 1.2.0
       dayjs:
         specifier: ^1.11.18
         version: 1.11.18
@@ -643,6 +646,9 @@ packages:
     resolution: {integrity: sha512-2T5zgSpcOZXGkH/UObIbIkGmUPQqZqn7esVQFXLOze622h4spgWf5jmvrqAo9dnI13/hyMcNsF1jsoDcb59nJQ==}
     peerDependencies:
       react: ^18 || ^19
+
+  '@thumbmarkjs/thumbmarkjs@1.2.0':
+    resolution: {integrity: sha512-Y4pWp/r/MH93YSZSg2HIH+XtDUfxiBUMu4k25Pa2bPHlxUlpvg1YK+uoXj1/dv3iGKUu3P8Naf6bpa7/GZovrQ==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -2011,6 +2017,8 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.85.9
       react: 19.1.1
+
+  '@thumbmarkjs/thumbmarkjs@1.2.0': {}
 
   '@types/babel__core@7.20.5':
     dependencies:
