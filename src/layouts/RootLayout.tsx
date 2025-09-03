@@ -20,7 +20,7 @@ export default function RootLayout() {
 
   return (
     <AppShell header={{ height: isSm ? 72 : 56 }} padding="md">
-      <AppShell.Header>
+      <AppShell.Header style={{ zIndex: 3000 }}>
         <Container size="xl" h="100%">
           {isSm ? (
             <>

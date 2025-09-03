@@ -3,9 +3,8 @@ import { IconHeart, IconHome2, IconUsers, IconDeviceTv } from '@tabler/icons-rea
 import type { Movie } from '../api/types';
 import { resolveImageUrl, buildTmdbPosterUrl, buildTmdbBackdropUrl } from '../config';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
-import { useEffect } from 'react';
 
 export type MovieCardProps = {
   movie: Movie;
@@ -77,7 +76,8 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
   // Responsive poster sizes when not stacked
   const posterW = !isStacked ? (layout === 'grid' ? 180 : 220) : 0;
   const posterH = !isStacked ? Math.round(posterW * 1.5) : 0;
-  const rows = showActions ? 'auto auto 1fr auto auto' : 'auto auto 1fr auto';
+  // use minmax(0, 1fr) to avoid fractional height clipping in CSS grid
+  const rows = showActions ? 'auto auto minmax(0, 1fr) auto auto' : 'auto auto minmax(0, 1fr) auto';
 
   // responsive title size
   const titleOrder = isSm ? 5 : 4;
@@ -95,7 +95,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
   const votedCategory = (movie as Movie).voted_category ?? null;
 
   return (
-    <Card withBorder shadow="sm" radius="md" padding="md" style={{ height: '100%' }}>
+    <Card withBorder shadow="sm" radius="md" padding="md" style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 12 }}>
       {isStacked ? (
         <Stack gap={8} style={{ width: '100%' }}>
           {/* Portrait poster on top, centered with clamp width and 2:3 ratio */}
@@ -111,8 +111,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
               h="100%"
               w="100%"
               loading={priority ? 'eager' : 'lazy'}
-              // @ts-expect-error: fetchpriority is a valid HTML attribute in modern browsers
-              fetchpriority={priority ? 'high' : 'auto'}
+              fetchPriority={priority ? 'high' : 'auto'}
               decoding={priority ? 'auto' : 'async'}
               onLoad={() => setLoaded(true)}
               onError={() => { setBroken(true); setLoaded(false); }}
@@ -125,7 +124,8 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
             <Title order={titleOrder} lineClamp={2}>{movie.title}</Title>
             <Text size="sm" c="dimmed">Release: {formatRelease(movie.release_date)}</Text>
             {movie.overview ? (
-              <Text size="sm" lh={1.5} lineClamp={4}>{movie.overview}</Text>
+              // stacked: clamp to 4 lines and set explicit maxHeight to avoid subpixel clipping
+              <Text size="sm" lh={1.5} style={{ overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 4, lineHeight: '1.5em', maxHeight: 'calc(4 * 1.5em)' }}>{movie.overview}</Text>
             ) : null}
 
             {showActions && (
@@ -136,8 +136,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     const isVoted = (movie as Movie).voted_category === c.key;
                     const disabled = (((movie as Movie).voted_category ?? null) !== null && !isVoted) || isVoting;
                     const displayLabel = isStacked ? c.shortLabel : c.label;
-                    const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '1 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
-                    const isHot = hottest.includes(c.key);
+                    const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                     return (
                       <Tooltip label={c.label} key={c.key}>
                         <Button size="compact-xs" fz="xs" variant="filled" leftSection={c.icon} onClick={() => onVote?.(c.key)} color={isVoted ? 'orange' : undefined} disabled={disabled} loading={isVoting && isVoted} style={btnStyle} styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}>
@@ -182,8 +181,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                   h="100%"
                   w="100%"
                   loading={priority ? 'eager' : 'lazy'}
-                  // @ts-expect-error: fetchpriority is a valid HTML attribute in modern browsers
-                  fetchpriority={priority ? 'high' : 'auto'}
+                  fetchPriority={priority ? 'high' : 'auto'}
                   decoding={priority ? 'auto' : 'async'}
                   onLoad={() => setLoaded(true)}
                   onError={() => { setBroken(true); setLoaded(false); }}
@@ -201,7 +199,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
             <Title order={titleOrder} lineClamp={2}>{movie.title}</Title>
             <Text size="sm" c="dimmed">Release: {formatRelease(movie.release_date)}</Text>
             {movie.overview ? (
-              <Text size="sm" lh={1.5} lineClamp={layout === 'grid' ? 3 : 6}>{movie.overview}</Text>
+              <Text size="sm" lh={1.5} style={{ overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: layout === 'grid' ? 5 : 8, lineHeight: '1.5em', maxHeight: `calc(${layout === 'grid' ? 5 : 8} * 1.5em)` }}>{movie.overview}</Text>
             ) : null}
 
             {showActions && (
@@ -213,8 +211,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                       const isVoted = votedCategory === c.key;
                       const disabled = (votedCategory !== null && !isVoted) || isVoting;
                       const displayLabel = isStacked ? c.shortLabel : c.label;
-                      const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '1 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
-                      const isHot = hottest.includes(c.key);
+                      const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                       return (
                         <Tooltip label={c.label} key={c.key}>
                           <Button
@@ -229,7 +226,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                             style={btnStyle}
                             styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
                           >
-                            {displayLabel}{isHot ? ' 🔥' : ''}
+                            {displayLabel}
                           </Button>
                         </Tooltip>
                       );
@@ -241,8 +238,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                       const isVoted = votedCategory === c.key;
                       const disabled = (votedCategory !== null && !isVoted) || isVoting;
                       const displayLabel = isStacked ? c.shortLabel : c.label;
-                      const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '1 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
-                      const isHot = hottest.includes(c.key);
+                      const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                       return (
                         <Tooltip label={c.label} key={c.key}>
                           <Button
@@ -257,7 +253,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                             style={btnStyle}
                             styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
                           >
-                            {displayLabel}{isHot ? ' 🔥' : ''}
+                            {displayLabel}
                           </Button>
                         </Tooltip>
                       );

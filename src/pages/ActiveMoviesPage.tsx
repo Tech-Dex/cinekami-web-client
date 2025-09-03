@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { Alert, Button, Center, Container, Loader, Paper, SimpleGrid, Stack, Text, useMantineTheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
@@ -72,6 +72,49 @@ export default function ActiveMoviesPage() {
   const theme = useMantineTheme();
   const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
 
+  // hide/show filters on scroll with a small debounce to avoid flicker
+  const [showFilters, setShowFilters] = useState(true);
+  const prevScrollY = useRef(0);
+  const debounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let ticking = false;
+    const handle = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // if we've reached the top, always show filters immediately
+          if (window.scrollY <= 50  && !showFilters) {
+            if (debounceRef.current) window.clearTimeout(debounceRef.current);
+            setShowFilters(true);
+            prevScrollY.current = 0;
+            ticking = false;
+            return;
+          }
+          const diff = window.scrollY - prevScrollY.current;
+          // ignore tiny scrolls
+          if (Math.abs(diff) > 10) {
+            const desired = diff < 0 || window.scrollY < 60; // show on scroll up or near top
+            if (desired !== showFilters) {
+              if (debounceRef.current) window.clearTimeout(debounceRef.current);
+              debounceRef.current = window.setTimeout(() => {
+                setShowFilters(desired);
+                debounceRef.current = null;
+              }, 140);
+            }
+          }
+          prevScrollY.current = window.scrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handle);
+    return () => {
+      window.removeEventListener('scroll', handle);
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+  }, [showFilters]);
+
   // Track which movie is currently posting a vote
   const [votingId, setVotingId] = useState<number | null>(null);
 
@@ -120,7 +163,7 @@ export default function ActiveMoviesPage() {
   return (
     <Container size="xl">
       <Stack>
-        <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: isSm ? 80 : 64, zIndex: 2, backdropFilter: 'blur(4px)' }}>
+        <Paper p="md" withBorder shadow="xs" style={{ position: 'sticky', top: isSm ? 80 : 64, zIndex: 2, backdropFilter: 'blur(4px)', transition: 'transform 190ms ease', transform: showFilters ? 'translateY(0)' : 'translateY(-120%)' }}>
           <MovieFilters value={filters} onChange={handleFilterChange} />
         </Paper>
 
