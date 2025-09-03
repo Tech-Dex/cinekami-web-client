@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { getSnapshots, getAvailableSnapshots } from '../api/client';
 import type { Movie, PaginatedResponse, Snapshot } from '../api/types';
 import { MovieCard } from '../components/MovieCard';
+import { MovieCardSkeleton } from '../components/MovieCardSkeleton';
 import { MovieFilters, type Filters } from '../components/MovieFilters';
 import { EmptyState } from '../components/EmptyState';
 import { InfiniteLoader } from '../components/InfiniteLoader';
@@ -153,14 +154,21 @@ export default function SnapshotsPage() {
           )}
 
           <SimpleGrid cols={cols} spacing="lg">
-            {items.map((s) => (
-              <MovieCard
-                key={`${s.month}-${s.movie_id}`}
-                movie={toMovieLike(s)}
-                layout={filters.layout}
-                showActions={false}
-              />
-            ))}
+            {(isFetching && items.length === 0) ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <MovieCardSkeleton key={`s-${i}`} layout={filters.layout} />
+              ))
+            ) : (
+              items.map((s, idx) => (
+                <MovieCard
+                  key={`${s.month}-${s.movie_id}`}
+                  movie={toMovieLike(s)}
+                  layout={filters.layout}
+                  showActions={false}
+                  priority={idx < 4}
+                />
+              ))
+            )}
           </SimpleGrid>
 
           <Center>

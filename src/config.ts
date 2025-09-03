@@ -2,6 +2,15 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undef
 
 export const TMDB_IMAGE_BASE_URL = (import.meta.env.VITE_TMDB_IMAGE_BASE_URL as string | undefined) || 'https://image.tmdb.org/t/p/w342';
 
+// Build a TMDB poster URL for a given size (e.g. w154, w185, w342, w500, w780)
+export function buildTmdbPosterUrl(path: string, size: string): string {
+  // Ensure leading slash
+  const p = path.startsWith('/') ? path : `/${path}`;
+  // Always use official TMDB base root for configurable sizes
+  const root = 'https://image.tmdb.org/t/p';
+  return `${root}/${size}${p}`;
+}
+
 export function resolveImageUrl(path: string | null | undefined): string | undefined {
   if (!path) return undefined;
   if (/^https?:\/\//i.test(path)) return path;

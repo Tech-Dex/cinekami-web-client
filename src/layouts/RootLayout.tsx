@@ -1,5 +1,5 @@
 import { AppShell, Group, Button, Container, Title } from '@mantine/core';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { Link, Outlet, NavLink as RRNavLink, useLocation } from 'react-router-dom';
 import { ColorSchemeToggle } from '../components/ColorSchemeToggle';
 
@@ -40,7 +40,7 @@ export default function RootLayout() {
                   component={RRNavLink}
                   to={l.to}
                   variant={l.match(location.pathname) ? 'filled' : 'subtle'}
-                  color={l.match(location.pathname) ? 'var(--mantine-color-orange-filled)' : 'gray'}
+                  color={l.match(location.pathname) ? 'orange' : 'gray'}
                 >
                   {l.label}
                 </Button>
@@ -52,7 +52,9 @@ export default function RootLayout() {
       </AppShell.Header>
 
       <AppShell.Main>
-        <Outlet />
+        <Suspense fallback={null}>
+          <Outlet />
+        </Suspense>
       </AppShell.Main>
     </AppShell>
   );

@@ -1,10 +1,11 @@
-import { Badge, Box, Button, Card, Group, Image, Stack, Text, Title, Tooltip, useMantineTheme } from '@mantine/core';
+import { Badge, Box, Button, Card, Group, Image, Stack, Text, Title, Tooltip, useMantineTheme, Skeleton } from '@mantine/core';
 import { IconHeart, IconHome2, IconUsers, IconDeviceTv } from '@tabler/icons-react';
 import type { Movie } from '../api/types';
-import { resolveImageUrl } from '../config';
+import { resolveImageUrl, buildTmdbPosterUrl } from '../config';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
+import { useEffect } from 'react';
 
 export type MovieCardProps = {
   movie: Movie;
@@ -13,6 +14,8 @@ export type MovieCardProps = {
   showActions?: boolean;
   // optional flag indicating a vote for this movie is in flight
   isVoting?: boolean;
+  // mark poster as above-the-fold LCP candidate to prioritize loading
+  priority?: boolean;
 };
 
 function formatPopularity(p: number) {
@@ -34,7 +37,7 @@ const ORDERED_CATEGORIES: Array<{ key: 'solo_friends' | 'couple' | 'streaming' |
   { key: 'arr', label: 'ARR', icon: <IconHome2 size={14} /> },
 ];
 
-export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, isVoting = false }: MovieCardProps) {
+export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, isVoting = false, priority = false }: MovieCardProps) {
   const tallies = movie.tallies || {};
   // Determine hottest categories based on tallies with tie rules
   const counts = ORDERED_CATEGORIES.map((c) => (tallies[c.key as keyof typeof tallies] as number | undefined) ?? 0);
@@ -46,14 +49,37 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
       hottest = [];
     }
   }
-  const posterUrl = resolveImageUrl(movie.poster_path);
-  const [broken, setBroken] = useState(false);
-  const theme = useMantineTheme();
-  const isXL = useMediaQuery(`(min-width: ${theme.breakpoints.xl})`);
-
+  // Compute poster dimensions early for sizes
   const posterW = layout === 'grid' ? 180 : 220;
   const posterH = layout === 'grid' ? 270 : 330;
   const rows = showActions ? 'auto auto 1fr auto auto' : 'auto auto 1fr auto';
+
+  const posterUrl = resolveImageUrl(movie.poster_path);
+  // Prepare responsive TMDB sources when poster_path is a TMDB-relative path
+  const isAbsolutePoster = !!movie.poster_path && /^https?:\/\//i.test(movie.poster_path);
+  const canBuildTmdb = !!movie.poster_path && !isAbsolutePoster;
+  const imgSrc = canBuildTmdb && movie.poster_path ? buildTmdbPosterUrl(movie.poster_path, 'w342') : posterUrl;
+  const imgSrcSet = canBuildTmdb && movie.poster_path
+    ? [
+        `${buildTmdbPosterUrl(movie.poster_path, 'w154')} 154w`,
+        `${buildTmdbPosterUrl(movie.poster_path, 'w185')} 185w`,
+        `${buildTmdbPosterUrl(movie.poster_path, 'w342')} 342w`,
+        `${buildTmdbPosterUrl(movie.poster_path, 'w500')} 500w`,
+        `${buildTmdbPosterUrl(movie.poster_path, 'w780')} 780w`,
+      ].join(', ')
+    : undefined;
+  const imgSizes = `${posterW}px`;
+
+  const [broken, setBroken] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const theme = useMantineTheme();
+  const isXL = useMediaQuery(`(min-width: ${theme.breakpoints.xl})`);
+
+  useEffect(() => {
+    // reset loading state when poster changes
+    setBroken(false);
+    setLoaded(false);
+  }, [posterUrl]);
 
   // voted_category from API (optional)
   const votedCategory = (movie as Movie).voted_category ?? null;
@@ -62,8 +88,33 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
     <Card withBorder shadow="sm" radius="md" padding="md" style={{ height: '100%' }}>
       <Box style={{ display: 'grid', gridTemplateColumns: `${posterW}px 1fr`, columnGap: 'var(--mantine-spacing-md)', alignItems: 'stretch', width: '100%' }}>
         <Box style={{ width: posterW }}>
-          {posterUrl && !broken ? (
-            <Image src={posterUrl} alt={movie.title} radius="sm" fit="cover" h={posterH} w="100%" onError={() => setBroken(true)} />
+          {imgSrc && !broken ? (
+            <Box style={{ position: 'relative', height: posterH }}>
+              <Skeleton
+                h="100%"
+                w="100%"
+                radius="sm"
+                style={{ position: 'absolute', inset: 0, display: loaded ? 'none' : 'block' }}
+              />
+              <Image
+                src={imgSrc}
+                srcSet={imgSrcSet}
+                sizes={imgSizes}
+                alt={movie.title}
+                radius="sm"
+                fit="cover"
+                h="100%"
+                w="100%"
+                // Prioritize LCP image
+                loading={priority ? 'eager' : 'lazy'}
+                // @ts-expect-error: fetchpriority is a valid HTML attribute in modern browsers
+                fetchpriority={priority ? 'high' : 'auto'}
+                decoding={priority ? 'auto' : 'async'}
+                onLoad={() => setLoaded(true)}
+                onError={() => { setBroken(true); setLoaded(false); }}
+                style={{ opacity: loaded ? 1 : 0, transition: 'opacity 150ms ease' }}
+              />
+            </Box>
           ) : (
             <Box h={posterH} bg="var(--mantine-color-default)" c="dimmed" ta="center" style={{ display: 'grid', placeItems: 'center', borderRadius: 6 }}>
               No image

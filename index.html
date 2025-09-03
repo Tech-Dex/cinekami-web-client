@@ -5,10 +5,16 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cinekami</title>
-    <!-- Load Poppins font -->
+    <!-- Load Poppins font non-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+    </noscript>
+    <!-- Preconnect to image CDN for faster poster loads -->
+    <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
     <!-- Mantine color scheme script to avoid theme flicker -->
     <script>
       // Prevent FOUC for dark mode if user prefers

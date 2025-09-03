@@ -5,6 +5,7 @@ import { notifications } from '@mantine/notifications';
 import { getActiveMovies, postVote } from '../api/client';
 import type { Movie, PaginatedResponse, HttpError } from '../api/types';
 import { MovieCard } from '../components/MovieCard';
+import { MovieCardSkeleton } from '../components/MovieCardSkeleton';
 import { MovieFilters, type Filters } from '../components/MovieFilters';
 import { getFingerprintV2 } from '../utils/fingerprintV2';
 import { EmptyState } from '../components/EmptyState';
@@ -128,15 +129,22 @@ export default function ActiveMoviesPage() {
         )}
 
         <SimpleGrid cols={cols} spacing="lg">
-          {items.map((m) => (
-            <MovieCard
-              key={m.id}
-              movie={m}
-              layout={filters.layout}
-              onVote={(cat) => handleVote(m.id, cat)}
-              isVoting={votingId === m.id}
-            />
-          ))}
+          {(isFetching && items.length === 0) ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <MovieCardSkeleton key={`s-${i}`} layout={filters.layout} />
+            ))
+          ) : (
+            items.map((m, idx) => (
+              <MovieCard
+                key={m.id}
+                movie={m}
+                layout={filters.layout}
+                onVote={(cat) => handleVote(m.id, cat)}
+                isVoting={votingId === m.id}
+                priority={idx < 4}
+              />
+            ))
+          )}
         </SimpleGrid>
 
         <Center>
