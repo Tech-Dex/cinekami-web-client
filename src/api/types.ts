@@ -71,3 +71,8 @@ export type VoteResponse = {
   tallies?: Tallies;
   voted_category?: 'solo_friends' | 'couple' | 'streaming' | 'arr' | null;
 };
+
+// New: available snapshots (years and months) response shape
+export type AvailableSnapshotsResponse = {
+  items: Array<{ year: number; months: number[] }>;
+};

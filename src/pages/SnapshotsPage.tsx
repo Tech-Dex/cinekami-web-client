@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Center, Container, Group, Loader, SimpleGrid, Stack, Text, Paper, NavLink, Box } from '@mantine/core';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { getSnapshots } from '../api/client';
+import { getSnapshots, getAvailableSnapshots } from '../api/client';
 import type { Movie, PaginatedResponse, Snapshot } from '../api/types';
 import { MovieCard } from '../components/MovieCard';
 import { MovieFilters, type Filters } from '../components/MovieFilters';
@@ -22,21 +22,6 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-
-// Mocked API: returns a list of years with available months (numbers)
-async function fetchAvailableMonths(): Promise<Array<{ year: number; months: number[] }>> {
-  const now = dayjs();
-  const thisYear = now.year();
-  const currentMonth = now.month() + 1; // 1..12
-  const prevYear = thisYear - 1;
-  const twoYearsAgo = thisYear - 2;
-  // sample: current year up to current month; last 2 full years
-  return [
-    { year: thisYear, months: Array.from({ length: currentMonth }, (_, i) => i + 1) },
-    { year: prevYear, months: Array.from({ length: 12 }, (_, i) => i + 1) },
-    { year: twoYearsAgo, months: Array.from({ length: 12 }, (_, i) => i + 1) },
-  ];
-}
 
 function toMovieLike(s: Snapshot): Movie {
   return {
@@ -63,9 +48,29 @@ export default function SnapshotsPage() {
   const [fp, setFp] = useState<string | null>(null);
 
   useEffect(() => {
-    // load mocked available months
-    fetchAvailableMonths().then(setAvailable).catch(() => setAvailable([]));
-  }, []);
+    let aborted = false;
+    const ac = new AbortController();
+    getAvailableSnapshots(ac.signal)
+      .then((res) => {
+        if (aborted) return;
+        const items = res.items || [];
+        setAvailable(items);
+        // If current selection isn’t available, pick the latest available
+        const hasCurrent = items.some((y) => y.year === year && y.months?.includes(month));
+        if (!hasCurrent && items.length > 0) {
+          const sortedYears = [...items].sort((a, b) => b.year - a.year);
+          const latestYear = sortedYears[0];
+          const latestMonth = [...(latestYear.months || [])].sort((a, b) => b - a)[0];
+          if (latestYear && latestMonth) {
+            setYear(latestYear.year);
+            setMonth(latestMonth);
+          }
+        }
+      })
+      .catch(() => { if (!aborted) setAvailable([]); })
+      .finally(() => { /* no-op */ });
+    return () => { aborted = true; ac.abort(); };
+  }, [month, year]);
 
   useEffect(() => {
     let mounted = true;

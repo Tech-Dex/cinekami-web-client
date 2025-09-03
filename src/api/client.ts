@@ -8,6 +8,7 @@ import type {
   SnapshotParams,
   Tally,
   VoteResponse,
+  AvailableSnapshotsResponse,
 } from './types';
 
 function buildQuery(params: Record<string, unknown> | undefined) {
@@ -71,4 +72,9 @@ export async function postVote(movieId: number, body: { category: string }, fing
     body: JSON.stringify(body),
   });
   return handleResponse<VoteResponse>(res);
+}
+
+export async function getAvailableSnapshots(signal?: AbortSignal): Promise<AvailableSnapshotsResponse> {
+  const res = await fetch(`${base}/snapshots/available`, { signal });
+  return handleResponse<AvailableSnapshotsResponse>(res);
 }
