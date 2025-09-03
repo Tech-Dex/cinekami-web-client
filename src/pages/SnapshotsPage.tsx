@@ -48,6 +48,8 @@ export default function SnapshotsPage() {
   const [available, setAvailable] = useState<Array<{ year: number; months: number[] }>>([]);
   const [isJumpOpen, setIsJumpOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
+  const showFiltersRef = useRef(showFilters);
+  useEffect(() => { showFiltersRef.current = showFilters; }, [showFilters]);
   // ref + state to indicate modal inner scrollability and position
   const modalContentRef = useRef<HTMLDivElement | null>(null);
   const [modalScrollable, setModalScrollable] = useState(false);
@@ -138,43 +140,47 @@ export default function SnapshotsPage() {
   // Hide/show filters when scrolling: hide on scroll down, reveal on small upward scroll
   // Debounced to avoid flicker on small/jittery scrolls
   useEffect(() => {
-    const prev = { y: 0 };
+    const prev = { y: window.scrollY };
     let ticking = false;
     let debounceId: number | null = null;
+    const nearTopThreshold = stickyTop; // ensure we always show when at/near the top sentinel
+
     const handle = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          // if we've reached (or nearly reached) the top, always show filters immediately
-          if (window.scrollY <= 50 && !showFilters) {
-            if (debounceId) window.clearTimeout(debounceId);
-            setShowFilters(true);
-            prev.y = 0;
-            ticking = false;
-            return;
-          }
-          const diff = window.scrollY - prev.y;
-          if (Math.abs(diff) > 10) {
-            const desired = diff < 0 || window.scrollY < headerHeight + 20; // show when scrolling up or near top
-            if (desired !== showFilters) {
-              if (debounceId) window.clearTimeout(debounceId);
-              debounceId = window.setTimeout(() => {
-                setShowFilters(desired);
-                debounceId = null;
-              }, 140);
-            }
-          }
-          prev.y = window.scrollY;
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+
+        // Always show when near the top; also cancel any pending hide
+        if (y <= nearTopThreshold) {
+          if (debounceId) { window.clearTimeout(debounceId); debounceId = null; }
+          if (!showFiltersRef.current) setShowFilters(true);
+          prev.y = y;
           ticking = false;
-        });
-        ticking = true;
-      }
+          return;
+        }
+
+        const diff = y - prev.y;
+        if (Math.abs(diff) > 10) {
+          const desired = diff < 0; // show on scroll up; hide on scroll down
+          if (desired !== showFiltersRef.current) {
+            if (debounceId) window.clearTimeout(debounceId);
+            debounceId = window.setTimeout(() => {
+              setShowFilters(desired);
+              debounceId = null;
+            }, 140);
+          }
+        }
+        prev.y = y;
+        ticking = false;
+      });
     };
-    window.addEventListener('scroll', handle);
+    window.addEventListener('scroll', handle, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handle);
+      window.removeEventListener('scroll', handle as any);
       if (debounceId) window.clearTimeout(debounceId);
     };
-  }, [showFilters, headerHeight]);
+  }, [stickyTop]);
 
   // detect whether modal content is scrollable and whether it's scrolled to bottom
   useEffect(() => {

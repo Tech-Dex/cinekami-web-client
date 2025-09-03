@@ -74,46 +74,55 @@ export default function ActiveMoviesPage() {
 
   // hide/show filters on scroll with a small debounce to avoid flicker
   const [showFilters, setShowFilters] = useState(true);
-  const prevScrollY = useRef(0);
-  const debounceRef = useRef<number | null>(null);
+  // keep a ref in sync so the scroll handler (added once) can read latest value without re-subscribing
+  const showFiltersRef = useRef(showFilters);
+  useEffect(() => { showFiltersRef.current = showFilters; }, [showFilters]);
+
+  // compute a sticky top that matches the Paper style below
+  const stickyTop = isSm ? 80 : 64;
 
   useEffect(() => {
+    const prev = { y: window.scrollY };
     let ticking = false;
+    let debounceId: number | null = null;
+    const nearTopThreshold = stickyTop; // ensure we always show when at/near the top sentinel
+
     const handle = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          // if we've reached the top, always show filters immediately
-          if (window.scrollY <= 50  && !showFilters) {
-            if (debounceRef.current) window.clearTimeout(debounceRef.current);
-            setShowFilters(true);
-            prevScrollY.current = 0;
-            ticking = false;
-            return;
-          }
-          const diff = window.scrollY - prevScrollY.current;
-          // ignore tiny scrolls
-          if (Math.abs(diff) > 10) {
-            const desired = diff < 0 || window.scrollY < 60; // show on scroll up or near top
-            if (desired !== showFilters) {
-              if (debounceRef.current) window.clearTimeout(debounceRef.current);
-              debounceRef.current = window.setTimeout(() => {
-                setShowFilters(desired);
-                debounceRef.current = null;
-              }, 140);
-            }
-          }
-          prevScrollY.current = window.scrollY;
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+
+        // Always show when near the top; also cancel any pending hide
+        if (y <= nearTopThreshold) {
+          if (debounceId) { window.clearTimeout(debounceId); debounceId = null; }
+          if (!showFiltersRef.current) setShowFilters(true);
+          prev.y = y;
           ticking = false;
-        });
-        ticking = true;
-      }
+          return;
+        }
+
+        const diff = y - prev.y;
+        if (Math.abs(diff) > 10) {
+          const desired = diff < 0; // show on scroll up; hide on scroll down
+          if (desired !== showFiltersRef.current) {
+            if (debounceId) window.clearTimeout(debounceId);
+            debounceId = window.setTimeout(() => {
+              setShowFilters(desired);
+              debounceId = null;
+            }, 140);
+          }
+        }
+        prev.y = y;
+        ticking = false;
+      });
     };
-    window.addEventListener('scroll', handle);
+    window.addEventListener('scroll', handle, { passive: true });
     return () => {
       window.removeEventListener('scroll', handle);
-      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      if (debounceId) window.clearTimeout(debounceId);
     };
-  }, [showFilters]);
+  }, [stickyTop]);
 
   // Track which movie is currently posting a vote
   const [votingId, setVotingId] = useState<number | null>(null);
