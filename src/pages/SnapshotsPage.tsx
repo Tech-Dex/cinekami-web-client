@@ -38,6 +38,8 @@ function toMovieLike(s: Snapshot): Movie {
     tallies: s.tallies,
     // include voted_category so MovieCard can reflect client's vote
     voted_category: (s as Snapshot).voted_category ?? null,
+    cinemagia_url: s.cinemagia_url ?? null,
+    imdb_url: s.imdb_url ?? null,
   };
 }
 

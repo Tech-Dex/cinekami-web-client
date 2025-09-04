@@ -7,7 +7,6 @@ import {
   Stack,
   Text,
   Title,
-  Tooltip,
   useMantineTheme,
   Skeleton,
   Button, Anchor
@@ -176,11 +175,23 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     const displayLabel = isStacked ? c.shortLabel : c.label;
                     const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                     return (
-                      <Tooltip label={c.label} key={c.key}>
-                        <Button className="vote-button" size="compact-xs" fz="xs" variant="filled" leftSection={c.icon} onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }} color={isVoted ? 'orange' : undefined} disabled={disabled} loading={isVoting && isVoted} style={btnStyle} styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}>
-                          {displayLabel}
-                        </Button>
-                      </Tooltip>
+                      <Button
+                        key={c.key}
+                        aria-label={c.label}
+                        className="vote-button"
+                        size="compact-xs"
+                        fz="xs"
+                        variant="filled"
+                        leftSection={c.icon}
+                        onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
+                        color={isVoted ? 'orange' : undefined}
+                        disabled={disabled}
+                        loading={isVoting && isVoted}
+                        style={btnStyle}
+                        styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
+                      >
+                        {displayLabel}
+                      </Button>
                     );
                   })}
                 </Group>
@@ -214,7 +225,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                               size="md"
                               style={{ cursor: 'pointer' }}
                           >
-                            Cinemacity
+                            Cinemagia
                           </Badge>
                         </Anchor>
                     )}
@@ -313,23 +324,23 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                        const displayLabel = isStacked ? c.shortLabel : c.label;
                        const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                        return (
-                         <Tooltip label={c.label} key={c.key}>
-                           <Button
-                             className="vote-button"
-                             size="compact-xs"
-                             fz="xs"
-                             variant="filled"
-                             leftSection={c.icon}
-                             onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
-                             color={isVoted ? 'var(--mantine-color-orange-filled)' : undefined}
-                             disabled={disabled}
-                             loading={isVoting && isVoted}
-                             style={btnStyle}
-                             styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
-                           >
-                             {displayLabel}
-                           </Button>
-                         </Tooltip>
+                         <Button
+                           key={c.key}
+                           aria-label={c.label}
+                           className="vote-button"
+                           size="compact-xs"
+                           fz="xs"
+                           variant="filled"
+                           leftSection={c.icon}
+                           onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
+                           color={isVoted ? 'var(--mantine-color-orange-filled)' : undefined}
+                           disabled={disabled}
+                           loading={isVoting && isVoted}
+                           style={btnStyle}
+                           styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
+                         >
+                           {displayLabel}
+                         </Button>
                        );
                      })}
                   </Group>
@@ -341,23 +352,23 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                        const displayLabel = isStacked ? c.shortLabel : c.label;
                        const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                        return (
-                         <Tooltip label={c.label} key={c.key}>
-                           <Button
-                             className="vote-button"
-                             size="compact-xs"
-                             fz="xs"
-                             variant="filled"
-                             leftSection={c.icon}
-                             onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
-                             color={isVoted ? 'var(--mantine-color-orange-filled)' : undefined}
-                             disabled={disabled}
-                             loading={isVoting && isVoted}
-                             style={btnStyle}
-                             styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
-                           >
-                             {displayLabel}
-                           </Button>
-                         </Tooltip>
+                         <Button
+                           key={c.key}
+                           aria-label={c.label}
+                           className="vote-button"
+                           size="compact-xs"
+                           fz="xs"
+                           variant="filled"
+                           leftSection={c.icon}
+                           onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
+                           color={isVoted ? 'var(--mantine-color-orange-filled)' : undefined}
+                           disabled={disabled}
+                           loading={isVoting && isVoted}
+                           style={btnStyle}
+                           styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
+                         >
+                           {displayLabel}
+                         </Button>
                        );
                      })}
                   </Group>
@@ -375,7 +386,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     </Badge>
                   ))}
                 </Group>
-                <Group gap='xl' wrap="wrap">
+                <Group gap='sm' wrap="wrap">
                   <Text size="sm" c="dimmed">TMDB Popularity: <Text span fw={600}>{formatPopularity(movie.popularity)}</Text></Text>
                   <Group gap={6} wrap="wrap">
                     {cineUrl && (
@@ -392,7 +403,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                               size="md"
                               style={{ cursor: 'pointer' }}
                           >
-                            Cinemacity
+                            Cinemagia
                           </Badge>
                         </Anchor>
                     )}
