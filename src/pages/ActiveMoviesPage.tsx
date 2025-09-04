@@ -21,6 +21,24 @@ const DEFAULT_FILTERS: Filters = {
 };
 
 export default function ActiveMoviesPage() {
+  // Update document title & meta description for SEO when this page is active
+  useEffect(() => {
+    const prevTitle = document.title;
+    const prevMeta = document.querySelector('meta[name="description"]')?.getAttribute('content') ?? '';
+    document.title = 'Cinekami — Active movies';
+    let desc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (!desc) {
+      desc = document.createElement('meta');
+      desc.name = 'description';
+      document.head.appendChild(desc);
+    }
+    desc.content = 'Browse active movies, vote and discover what to watch. Sort by popularity and filter by streaming, couple, ARR or solo/friends.';
+    return () => {
+      document.title = prevTitle;
+      if (desc) desc.content = prevMeta;
+    };
+  }, []);
+
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const queryClient = useQueryClient();
 
@@ -33,6 +51,9 @@ export default function ActiveMoviesPage() {
   }, []);
 
   const queryKey = useMemo(() => ['movies', 'active', filters, fp] as const, [filters, fp]);
+
+  // helper: treat 0 or null as unset (undefined) for max_popularity
+  const mapMax = (v?: number | null) => (typeof v === 'number' && v > 0 ? v : undefined);
 
   const {
     data,
@@ -51,7 +72,8 @@ export default function ActiveMoviesPage() {
         sort_by: filters.sort_by,
         sort_dir: filters.sort_dir,
         min_popularity: filters.min_popularity ?? undefined,
-        max_popularity: filters.max_popularity ?? undefined,
+        // treat 0 as unset so "0" shows all
+        max_popularity: mapMax(filters.max_popularity),
         cursor: pageParam as string | null,
         limit: 18, // multiple of 3 for balanced grid
       }, fp ?? undefined);

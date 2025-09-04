@@ -10,6 +10,8 @@ export default function RootLayout() {
   const location = useLocation();
   const theme = useMantineTheme();
   const isSm = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
+  const { colorScheme } = useMantineColorScheme();
+  const burgerColor = colorScheme === 'dark' ? 'white' : 'black';
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function RootLayout() {
                 onClick={() => setDrawerOpen((o) => !o)}
                 aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
                 title={drawerOpen ? 'Close menu' : 'Open menu'}
+                color={burgerColor}
               />
 
               <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }} aria-label="Cinekami home">
@@ -63,7 +66,7 @@ export default function RootLayout() {
                   <Box style={{ borderRadius: 6 }}>
                     <Group align="center" justify="space-between">
                       {/* Animated burger shown as opened (displays X) and colored white to match header X */}
-                      <Burger opened={true} onClick={() => setDrawerOpen(false)} size={20} color="white" aria-label="Close menu" />
+                      <Burger opened={true} onClick={() => setDrawerOpen(false)} size={20} color={burgerColor} aria-label="Close menu" />
                       <Title order={4} style={{ color: 'var(--mantine-color-orange-filled)', margin: 0, transform: 'scaleX(1.3)', transformOrigin: 'right center' }}>CINEKAMI</Title>
                     </Group>
                   </Box>

@@ -93,6 +93,9 @@ export default function SnapshotsPage() {
 
   const queryKey = useMemo(() => ['snapshots', { year, month, ...filters }, fp] as const, [year, month, filters, fp]);
 
+  // helper: treat 0 or null as unset (undefined) for max_popularity
+  const mapMax = (v?: number | null) => (typeof v === 'number' && v > 0 ? v : undefined);
+
   const {
     data,
     isFetching,
@@ -110,7 +113,8 @@ export default function SnapshotsPage() {
         sort_by: filters.sort_by,
         sort_dir: filters.sort_dir,
         min_popularity: filters.min_popularity ?? undefined,
-        max_popularity: filters.max_popularity ?? undefined,
+        // treat 0 as unset so "0" shows all
+        max_popularity: mapMax(filters.max_popularity),
         cursor: pageParam as string | null,
         limit: 18, // multiple of 3 for balanced grid
       }, fp ?? undefined);
