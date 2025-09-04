@@ -20,7 +20,7 @@ const Devtools = import.meta.env.DEV
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider defaultColorScheme="auto" theme={theme}>
+    <MantineProvider defaultColorScheme="dark" theme={theme}>
       <Notifications position="top-right" zIndex={9999} />
       <QueryClientProvider client={queryClient}>
         <AppProvider>

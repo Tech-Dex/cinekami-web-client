@@ -85,17 +85,31 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
   const [broken, setBroken] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
+  // voted_category from API (optional) — declare early so effects can reference it
+  const votedCategory = (movie as Movie).voted_category ?? null;
+
+  // callout to prompt users to vote on items they haven't voted on yet.
+  // Only show when actions are available (showActions === true). Persist until the user interacts or the item becomes voted.
+  const [showVoteCallout, setShowVoteCallout] = useState<boolean>(showActions && votedCategory === null);
+  useEffect(() => {
+    if (!showActions) {
+      setShowVoteCallout(false);
+      return;
+    }
+    if (votedCategory != null) setShowVoteCallout(false);
+    else setShowVoteCallout(true);
+  }, [votedCategory, showActions]);
+
   useEffect(() => {
     // reset loading state when poster changes
     setBroken(false);
     setLoaded(false);
   }, [posterSrc]);
 
-  // voted_category from API (optional)
-  const votedCategory = (movie as Movie).voted_category ?? null;
-
   return (
-    <Card withBorder shadow="sm" radius="md" padding="md" style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 12 }}>
+    <Card withBorder shadow="sm" radius="md" padding="md" style={{ position: 'relative', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 12 }}>
+      {showVoteCallout && <div className="vote-callout">Tap to vote</div>}
+
       {isStacked ? (
         <Stack gap={8} style={{ width: '100%' }}>
           {/* Portrait poster on top, centered with clamp width and 2:3 ratio */}
@@ -126,12 +140,15 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
             {movie.overview ? (
               // stacked: clamp to 4 lines and set explicit maxHeight to avoid subpixel clipping
               <Text size="sm" lh={1.5} style={{ overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 4, lineHeight: '1.5em', maxHeight: 'calc(4 * 1.5em)' }}>{movie.overview}</Text>
-            ) : null}
+            ) : (
+              // reserve one line's worth of space so grid rows don't collapse and buttons stay in the correct row
+              <Text size="sm" lh={1.5} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</Text>
+            )}
 
             {showActions && (
               <Box>
                 <Box my={6} h={1} w="100%" bg="var(--mantine-color-default-border)" />
-                <Group gap={6} wrap={isStacked ? 'wrap' : 'nowrap'} style={isStacked ? { gap: 6 } : { overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <Group gap={6} wrap={isStacked ? 'wrap' : 'nowrap'} style={isStacked ? { gap: 6 } : { overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
                   {ORDERED_CATEGORIES.map((c) => {
                     const isVoted = (movie as Movie).voted_category === c.key;
                     const disabled = (((movie as Movie).voted_category ?? null) !== null && !isVoted) || isVoting;
@@ -139,7 +156,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
                     return (
                       <Tooltip label={c.label} key={c.key}>
-                        <Button size="compact-xs" fz="xs" variant="filled" leftSection={c.icon} onClick={() => onVote?.(c.key)} color={isVoted ? 'orange' : undefined} disabled={disabled} loading={isVoting && isVoted} style={btnStyle} styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}>
+                        <Button className="vote-button" size="compact-xs" fz="xs" variant="filled" leftSection={c.icon} onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }} color={isVoted ? 'orange' : undefined} disabled={disabled} loading={isVoting && isVoted} style={btnStyle} styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}>
                           {displayLabel}
                         </Button>
                       </Tooltip>
@@ -200,64 +217,69 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
             <Text size="sm" c="dimmed">Release: {formatRelease(movie.release_date)}</Text>
             {movie.overview ? (
               <Text size="sm" lh={1.5} style={{ overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: layout === 'grid' ? 5 : 8, lineHeight: '1.5em', maxHeight: `calc(${layout === 'grid' ? 5 : 8} * 1.5em)` }}>{movie.overview}</Text>
-            ) : null}
+            ) : (
+              // reserve a single line so the actions row keeps its intended position
+              <Text size="sm" lh={1.5} style={{ visibility: 'hidden' }} aria-hidden="true">&nbsp;</Text>
+            )}
 
             {showActions && (
               <Box>
                 <Box my={6} h={1} w="100%" bg="var(--mantine-color-default-border)" />
                 {layout === 'grid' && isXL ? (
-                  <Group gap={4} wrap={isStacked ? 'wrap' : 'nowrap'} justify="flex-start" style={isStacked ? { width: '100%', justifySelf: 'stretch' } : { width: '100%', justifySelf: 'stretch', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <Group gap={4} wrap={isStacked ? 'wrap' : 'nowrap'} justify="flex-start" style={isStacked ? { width: '100%', justifySelf: 'stretch' } : { width: '100%', justifySelf: 'stretch', overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
                     {ORDERED_CATEGORIES.map((c) => {
-                      const isVoted = votedCategory === c.key;
-                      const disabled = (votedCategory !== null && !isVoted) || isVoting;
-                      const displayLabel = isStacked ? c.shortLabel : c.label;
-                      const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
-                      return (
-                        <Tooltip label={c.label} key={c.key}>
-                          <Button
-                            size="compact-xs"
-                            fz="xs"
-                            variant="filled"
-                            leftSection={c.icon}
-                            onClick={() => onVote?.(c.key)}
-                            color={isVoted ? 'orange' : undefined}
-                            disabled={disabled}
-                            loading={isVoting && isVoted}
-                            style={btnStyle}
-                            styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
-                          >
-                            {displayLabel}
-                          </Button>
-                        </Tooltip>
-                      );
-                    })}
+                       const isVoted = votedCategory === c.key;
+                       const disabled = (votedCategory !== null && !isVoted) || isVoting;
+                       const displayLabel = isStacked ? c.shortLabel : c.label;
+                       const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
+                       return (
+                         <Tooltip label={c.label} key={c.key}>
+                           <Button
+                             className="vote-button"
+                             size="compact-xs"
+                             fz="xs"
+                             variant="filled"
+                             leftSection={c.icon}
+                             onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
+                             color={isVoted ? 'orange' : undefined}
+                             disabled={disabled}
+                             loading={isVoting && isVoted}
+                             style={btnStyle}
+                             styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
+                           >
+                             {displayLabel}
+                           </Button>
+                         </Tooltip>
+                       );
+                     })}
                   </Group>
                 ) : (
-                  <Group gap={4} wrap={isStacked ? 'wrap' : 'nowrap'} justify="flex-start" style={isStacked ? { width: '100%', justifySelf: 'stretch' } : { width: '100%', justifySelf: 'stretch', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <Group gap={4} wrap={isStacked ? 'wrap' : 'nowrap'} justify="flex-start" style={isStacked ? { width: '100%', justifySelf: 'stretch' } : { width: '100%', justifySelf: 'stretch', overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
                     {ORDERED_CATEGORIES.map((c) => {
-                      const isVoted = votedCategory === c.key;
-                      const disabled = (votedCategory !== null && !isVoted) || isVoting;
-                      const displayLabel = isStacked ? c.shortLabel : c.label;
-                      const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
-                      return (
-                        <Tooltip label={c.label} key={c.key}>
-                          <Button
-                            size="compact-xs"
-                            fz="xs"
-                            variant="filled"
-                            leftSection={c.icon}
-                            onClick={() => onVote?.(c.key)}
-                            color={isVoted ? 'orange' : undefined}
-                            disabled={disabled}
-                            loading={isVoting && isVoted}
-                            style={btnStyle}
-                            styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
-                          >
-                            {displayLabel}
-                          </Button>
-                        </Tooltip>
-                      );
-                    })}
+                       const isVoted = votedCategory === c.key;
+                       const disabled = (votedCategory !== null && !isVoted) || isVoting;
+                       const displayLabel = isStacked ? c.shortLabel : c.label;
+                       const btnStyle: React.CSSProperties = isStacked ? { whiteSpace: 'nowrap', paddingInline: 8, flex: '0 1 auto', minWidth: 0 } : { whiteSpace: 'nowrap', paddingInline: 8, flexShrink: 0, minWidth: 'max-content' };
+                       return (
+                         <Tooltip label={c.label} key={c.key}>
+                           <Button
+                             className="vote-button"
+                             size="compact-xs"
+                             fz="xs"
+                             variant="filled"
+                             leftSection={c.icon}
+                             onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
+                             color={isVoted ? 'orange' : undefined}
+                             disabled={disabled}
+                             loading={isVoting && isVoted}
+                             style={btnStyle}
+                             styles={{ label: { whiteSpace: 'nowrap', fontSize: 'var(--mantine-font-size-xs)' } }}
+                           >
+                             {displayLabel}
+                           </Button>
+                         </Tooltip>
+                       );
+                     })}
                   </Group>
                 )}
               </Box>

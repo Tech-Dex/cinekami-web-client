@@ -1,4 +1,11 @@
 /* Minimal globals; Mantine theme controls colors and typography */
+:where([data-mantine-color-scheme='light']) body,
+:where([data-mantine-color-scheme='light']) #root {
+  /* Soft light gray for better contrast with orange/blue (not pure white) */
+  background-color: #f2f3f5;
+  color: #0b1220;
+}
+
 html, body, #root {
   height: 100%;
 }
@@ -27,4 +34,108 @@ a:hover {
 .mantine-NavLink-root a,
 .mantine-NavLink-root a:hover {
   text-decoration: none;
+}
+
+/* Visual affordance for vote buttons */
+.vote-button {
+  /* Disable animations so vote buttons don't shift or get clipped when hovered/clicked */
+  transition: none !important;
+  will-change: auto;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.vote-button:hover,
+.vote-button:focus,
+.vote-button:active {
+  /* Prevent any movement or elevation on interaction */
+  transform: none !important;
+  box-shadow: none !important;
+}
+.vote-button[disabled] {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Small ephemeral callout badge to prompt voting */
+.vote-callout {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--mantine-color-orange-filled);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* On small screens, avoid an opaque background so the callout doesn't obscure logos/posters. Keep text readable with a subtle shadow. */
+/*@media (max-width: 600px) {*/
+/*  .vote-callout {*/
+/*    !* solid orange background and white text on mobile for better contrast *!*/
+/*    background: var(--mantine-color-orange-filled);*/
+/*    color: #ffffff;*/
+/*    text-shadow: none;*/
+/*    box-shadow: 0 6px 18px rgba(0,0,0,0.12);*/
+/*    opacity: 0.98;*/
+/*  }*/
+/*}*/
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-button { transition: none; }
+}
+
+/* Make header, cards and paper use the same soft light-gray in light mode */
+:where([data-mantine-color-scheme='light']) .mantine-Header-root,
+:where([data-mantine-color-scheme='light']) .mantine-Card-root,
+:where([data-mantine-color-scheme='light']) .mantine-Paper-root {
+  background-color: #f2f3f5;
+}
+
+/* Slightly darker border for cards in light mode for better separation */
+:where([data-mantine-color-scheme='light']) .mantine-Card-root[with-border],
+:where([data-mantine-color-scheme='light']) .mantine-Paper-root[with-border] {
+  border-color: rgba(11,18,32,0.06);
+}
+
+/* Dark mode base and component backgrounds */
+:where([data-mantine-color-scheme='dark']) body,
+:where([data-mantine-color-scheme='dark']) #root {
+  /* Deep charcoal background for app dark mode */
+  background-color: #0b1220;
+  color: #e6eef8;
+}
+
+:where([data-mantine-color-scheme='dark']) .mantine-Header-root,
+:where([data-mantine-color-scheme='dark']) .mantine-Card-root,
+:where([data-mantine-color-scheme='dark']) .mantine-Paper-root {
+  /* Match AppShell header and cards/papers to the dark app background */
+  background-color: #0f1724;
+  color: #e6eef8;
+}
+
+:where([data-mantine-color-scheme='dark']) .mantine-Card-root[with-border],
+:where([data-mantine-color-scheme='dark']) .mantine-Paper-root[with-border] {
+  border-color: rgba(230,238,248,0.06);
+}
+
+/* Also style Mantine AppShell header/root explicitly (some Mantine versions use these classes) */
+:where([data-mantine-color-scheme='light']) .mantine-AppShell-header,
+:where([data-mantine-color-scheme='light']) .mantine-AppShell-root {
+  background-color: #f2f3f5;
+  color: #0b1220;
+}
+:where([data-mantine-color-scheme='light']) .mantine-AppShell-header[data-with-border='true'] {
+  border-bottom: 1px solid rgba(11,18,32,0.06);
+}
+
+:where([data-mantine-color-scheme='dark']) .mantine-AppShell-header,
+:where([data-mantine-color-scheme='dark']) .mantine-AppShell-root {
+  background-color: #0f1724;
+  color: #e6eef8;
+}
+:where([data-mantine-color-scheme='dark']) .mantine-AppShell-header[data-with-border='true'] {
+  border-bottom: 1px solid rgba(230,238,248,0.04);
 }

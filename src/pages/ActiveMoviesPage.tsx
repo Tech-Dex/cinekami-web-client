@@ -128,6 +128,15 @@ export default function ActiveMoviesPage() {
   const [votingId, setVotingId] = useState<number | null>(null);
 
   const handleVote = useCallback(async (movieId: number, category: 'solo_friends' | 'couple' | 'streaming' | 'arr') => {
+    // Extra guard: if cache already shows this movie has been voted, skip API call
+    const cached = queryClient.getQueryData<InfiniteData<PaginatedResponse<Movie>>>(['movies', 'active']);
+    if (cached) {
+      for (const page of cached.pages ?? []) {
+        const found = page.items.find((m) => m.id === movieId);
+        if (found && (found as Movie).voted_category != null) return; // already voted, skip
+      }
+    }
+
     try {
       setVotingId(movieId);
       const f = fp ?? await getFingerprintV2();
