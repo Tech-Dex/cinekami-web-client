@@ -135,7 +135,8 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
 
           {/* Text and actions below */}
           <Stack gap={8}>
-            <Title order={titleOrder} lineClamp={2}>{movie.title}</Title>
+            {/* reserve space on the right for the vote slots so long titles wrap to line 2 */}
+            <Title className="movie-title" order={titleOrder} lineClamp={2} style={{ paddingRight: (layout === 'grid' && !isStacked) ? 100 : 0, minWidth: 0 }}>{movie.title}</Title>
             <Text size="sm" c="dimmed">Release: {formatRelease(movie.release_date)}</Text>
             {movie.overview ? (
               // stacked: clamp to 4 lines and set explicit maxHeight to avoid subpixel clipping
@@ -213,7 +214,8 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
           </Box>
 
           <Stack style={{ display: 'grid', gridTemplateRows: rows, gridTemplateColumns: '1fr', minHeight: posterH, width: '100%', minWidth: 0 }} gap={8}>
-            <Title order={titleOrder} lineClamp={2}>{movie.title}</Title>
+            {/* reserve space on the right for the vote slots so long titles wrap to line 2 */}
+            <Title className="movie-title" order={titleOrder} lineClamp={2} style={{ paddingRight: (layout === 'grid' && !isStacked) ? 100 : 0, minWidth: 0,}}>{movie.title}</Title>
             <Text size="sm" c="dimmed">Release: {formatRelease(movie.release_date)}</Text>
             {movie.overview ? (
               <Text size="sm" lh={1.5} style={{ overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: layout === 'grid' ? 5 : 8, lineHeight: '1.5em', maxHeight: `calc(${layout === 'grid' ? 5 : 8} * 1.5em)` }}>{movie.overview}</Text>
@@ -241,7 +243,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                              variant="filled"
                              leftSection={c.icon}
                              onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
-                             color={isVoted ? 'orange' : undefined}
+                             color={isVoted ? 'var(--mantine-color-orange-filled)' : undefined}
                              disabled={disabled}
                              loading={isVoting && isVoted}
                              style={btnStyle}
@@ -269,7 +271,7 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                              variant="filled"
                              leftSection={c.icon}
                              onClick={() => { if (votedCategory === null && !isVoting) { setShowVoteCallout(false); onVote?.(c.key); } }}
-                             color={isVoted ? 'orange' : undefined}
+                             color={isVoted ? 'var(--mantine-color-orange-filled)' : undefined}
                              disabled={disabled}
                              loading={isVoting && isVoted}
                              style={btnStyle}
