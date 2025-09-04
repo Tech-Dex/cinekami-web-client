@@ -177,7 +177,7 @@ export default function SnapshotsPage() {
     };
     window.addEventListener('scroll', handle, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handle as any);
+      window.removeEventListener('scroll', handle);
       if (debounceId) window.clearTimeout(debounceId);
     };
   }, [stickyTop]);

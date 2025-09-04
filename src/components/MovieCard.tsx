@@ -1,4 +1,17 @@
-import { Badge, Box, Button, Card, Group, Image, Stack, Text, Title, Tooltip, useMantineTheme, Skeleton } from '@mantine/core';
+import {
+  Badge,
+  Box,
+  Card,
+  Group,
+  Image,
+  Stack,
+  Text,
+  Title,
+  Tooltip,
+  useMantineTheme,
+  Skeleton,
+  Button, Anchor
+} from '@mantine/core';
 import { IconHeart, IconHome2, IconUsers, IconDeviceTv } from '@tabler/icons-react';
 import type { Movie } from '../api/types';
 import { resolveImageUrl, buildTmdbPosterUrl, buildTmdbBackdropUrl } from '../config';
@@ -106,6 +119,13 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
     setLoaded(false);
   }, [posterSrc]);
 
+
+  // External link chips (text-only). Render CineMagia/IMDb only when link exists; TMDB is always present.
+  const cineUrl = (movie.cinemagia_url ?? '').trim();
+  const imdbUrl = (movie.imdb_url ?? '').trim();
+  const tmdbUrl = `https://www.themoviedb.org/movie/${movie.id}`;
+
+
   return (
     <Card withBorder shadow="sm" radius="md" padding="md" style={{ position: 'relative', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: 12 }}>
       {showVoteCallout && <div className="vote-callout">Tap to vote</div>}
@@ -177,7 +197,65 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     </Badge>
                   ))}
                 </Group>
-                <Text size="sm" c="dimmed">TMDB Popularity: <Text span fw={600}>{formatPopularity(movie.popularity)}</Text></Text>
+                <Group gap='xs' wrap="wrap">
+                  <Text size="sm" c="dimmed">TMDB Popularity: <Text span fw={600}>{formatPopularity(movie.popularity)}</Text></Text>
+                  <Group gap={6} wrap="wrap">
+                    {cineUrl && (
+                        <Anchor
+                            href={cineUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none' }}
+                        >
+                          <Badge
+                              variant="light"
+                              radius="xs"
+                              color="orange"
+                              size="md"
+                              style={{ cursor: 'pointer' }}
+                          >
+                            Cinemacity
+                          </Badge>
+                        </Anchor>
+                    )}
+                    {imdbUrl && (
+                        <Anchor
+                            href={imdbUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none' }}
+                        >
+                          <Badge
+                              variant="light"
+                              radius="xs"
+                              color="grape"
+                              size="md"
+                              style={{ cursor: 'pointer' }}
+                          >
+                            IMDb
+                          </Badge>
+                        </Anchor>
+                    )}
+                    {tmdbUrl && (
+                        <Anchor
+                            href={tmdbUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none' }}
+                        >
+                          <Badge
+                              variant="light"
+                              radius="xs"
+                              color="blue"
+                              size="md"
+                              style={{ cursor: 'pointer' }}
+                          >
+                            TMDB
+                          </Badge>
+                        </Anchor>
+                    )}
+                  </Group>
+                </Group>
               </Group>
             </Box>
           </Stack>
@@ -297,7 +375,65 @@ export function MovieCard({ movie, onVote, layout = 'grid', showActions = true, 
                     </Badge>
                   ))}
                 </Group>
-                <Text size="sm" c="dimmed">TMDB Popularity: <Text span fw={600}>{formatPopularity(movie.popularity)}</Text></Text>
+                <Group gap='xl' wrap="wrap">
+                  <Text size="sm" c="dimmed">TMDB Popularity: <Text span fw={600}>{formatPopularity(movie.popularity)}</Text></Text>
+                  <Group gap={6} wrap="wrap">
+                    {cineUrl && (
+                        <Anchor
+                            href={cineUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none' }}
+                        >
+                          <Badge
+                              variant="light"
+                              radius="xs"
+                              color="orange"
+                              size="md"
+                              style={{ cursor: 'pointer' }}
+                          >
+                            Cinemacity
+                          </Badge>
+                        </Anchor>
+                    )}
+                    {imdbUrl && (
+                        <Anchor
+                            href={imdbUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none' }}
+                        >
+                          <Badge
+                              variant="light"
+                              radius="xs"
+                              color="grape"
+                              size="md"
+                              style={{ cursor: 'pointer' }}
+                          >
+                            IMDb
+                          </Badge>
+                        </Anchor>
+                    )}
+                    {tmdbUrl && (
+                        <Anchor
+                            href={tmdbUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ textDecoration: 'none' }}
+                        >
+                          <Badge
+                              variant="light"
+                              radius="xs"
+                              color="blue"
+                              size="md"
+                              style={{ cursor: 'pointer' }}
+                          >
+                            TMDB
+                          </Badge>
+                        </Anchor>
+                    )}
+                  </Group>
+                </Group>
               </Group>
             </Box>
           </Stack>

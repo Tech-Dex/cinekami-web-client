@@ -137,6 +137,7 @@ export default function RootLayout() {
                     to={l.to}
                     variant={l.match(location.pathname) ? 'filled' : 'subtle'}
                     color={l.match(location.pathname) ? 'var(--mantine-color-orange-filled)' : 'gray'}
+                    leftSection={l.to === '/' ? <IconCalendar size={16} /> : <IconPhoto size={16} />}
                   >
                     {l.label}
                   </Button>

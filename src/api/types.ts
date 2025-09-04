@@ -31,6 +31,9 @@ export type Movie = {
   tallies?: Tallies;
   // Optional: category the current client/fingerprint has voted for
   voted_category?: 'solo_friends' | 'couple' | 'streaming' | 'arr' | null;
+  // Optional external links
+  cinemagia_url?: string | null;
+  imdb_url?: string | null;
 };
 
 export type Snapshot = {
@@ -46,6 +49,9 @@ export type Snapshot = {
   popularity: number;
   // Optional: voted category for this snapshot for the current fingerprint
   voted_category?: 'solo_friends' | 'couple' | 'streaming' | 'arr' | null;
+  // Optional external links
+  cinemagia_url?: string | null;
+  imdb_url?: string | null;
 };
 
 export type Tally = {
